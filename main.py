@@ -38,11 +38,11 @@
 #         )
 
 import requests
-import smtplib
 from twilio.rest import Client
+from twilio.http.http_client import TwilioHttpClient
 import os
 
-API_KEY = os.environ.get("API_KEY")
+API_KEY = os.environ.get("OWM_API_KEY")
 OWM_ENDPOINT = "https://api.openweathermap.org/data/2.5/forecast?"
 params = {
     "lat" : 39.952583,
@@ -56,8 +56,7 @@ TWILIO_FAILSAFE = "TXRTAJ88NU5K1QMM8GAQVT1L"
 account_sid = os.environ.get("ACCOUNT_SID")
 auth_token = os.environ.get("AUTH_TOKEN")
 
-
-#URL = f"http://api.openweathermap.org/data/2.5/weather?q=conroe,texas&appid={API_KEY}"
+# URL = f"https://api.openweathermap.org/data/2.5/weather?q=conroe,texas&appid={API_KEY}"
 
 response = requests.get(url=OWM_ENDPOINT,params=params)
 print(response.raise_for_status())
@@ -70,7 +69,9 @@ for hour_data in weather_data["list"]:
     if condition_code <700:
         will_rain = True
 if will_rain:
-    client = Client(account_sid, auth_token)
+    proxy_client = TwilioHttpClient()
+    proxy_client.session.proxies = {'https': os.environ['https_proxy']}
+    client = Client(account_sid, auth_token,http_client=proxy_client)
     message = client.messages.create(
         from_="whatsapp:+14155238886",
         body="It is going to rain today!. Carry an umbrella!",
@@ -78,3 +79,4 @@ if will_rain:
     )
 
     print(message.body)
+
